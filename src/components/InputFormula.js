@@ -10,6 +10,35 @@ const InputFormula = ({ formula }) => {
     // Create a new instance of the Parser
     const parser = new Parser();
 
+    // Register custom functions to handle CONCAT, FIXED, and TEXT functions
+    parser.on('callFunction', (name, params, done) => {
+      if (name === 'CONCAT') {
+        const concatenated = params.join('');
+        done(concatenated);
+        return;
+      }
+
+      if (name === 'FIXED') {
+        const [number, decimals] = params;
+        const formattedNumber = parseFloat(number).toFixed(decimals);
+        done(formattedNumber);
+        return;
+      }
+
+      if (name === 'TEXT') {
+        const [number, format] = params;
+        const formattedNumber = new Intl.NumberFormat('en-US', {
+          minimumFractionDigits: format.split('.')[1].length,
+          maximumFractionDigits: format.split('.')[1].length,
+          useGrouping: format.includes(','),
+        }).format(number);
+        done(formattedNumber);
+        return;
+      }
+
+      done(new Error('Function not implemented'));
+    });
+
     // Parse and evaluate the formula
     const result = parser.parse(formula);
 
